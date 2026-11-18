@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Vision Bot — Tableau de Bord</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ======================================================================
+       Écran de Connexion (Login Screen)
+       ====================================================================== -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="login-brand-icon">🔮</div>
+      <div>
+        <h2 class="login-title">Virtual Vision Bot</h2>
+        <p class="login-desc">Espace d'administration du bot Discord pour le service de montage vidéo <strong>Virtual Vision</strong>.</p>
+      </div>
+
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label for="secretKeyInput">🔑 Clé Secrète (X-Dashboard-Secret)</label>
+          <input 
+            type="password" 
+            id="secretKeyInput" 
+            class="form-control" 
+            placeholder="Entrez votre clé secrète..." 
+            autocomplete="current-password"
+            required
+          >
+          <div class="form-hint">Clé configurée dans votre fichier .env du bot.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="apiUrlInput">🌐 Adresse de l'API (Optionnel)</label>
+          <input 
+            type="text" 
+            id="apiUrlInput" 
+            class="form-control" 
+            placeholder="Ex: http://localhost:3000"
+          >
+          <div class="form-hint">Laissez vide pour utiliser l'hôte courant.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">
+          🚀 Accéder au Tableau de Bord
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       Structure Principale (Application Shell)
+       ====================================================================== -->
+  <div id="appContainer" class="app-container">
+
+    <!-- Barre latérale (Sidebar) -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-icon">🔮</span>
+        <div class="brand-info">
+          <span class="brand-title">Virtual Vision</span>
+          <span class="brand-subtitle">Montage & Vidéo</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a class="nav-item active" data-section="accueil">
+          <span class="nav-icon">🏠</span>
+          <span>Accueil</span>
+        </a>
+        <a class="nav-item" data-section="tickets">
+          <span class="nav-icon">🎫</span>
+          <span>Tickets</span>
+        </a>
+        <a class="nav-item" data-section="avis">
+          <span class="nav-icon">⭐</span>
+          <span>Avis</span>
+        </a>
+        <a class="nav-item" data-section="moderation">
+          <span class="nav-icon">🛡️</span>
+          <span>Modération</span>
+        </a>
+        <a class="nav-item" data-section="configuration">
+          <span class="nav-icon">⚙️</span>
+          <span>Configuration</span>
+        </a>
+        <a class="nav-item" data-section="statistiques">
+          <span class="nav-icon">📊</span>
+          <span>Statistiques</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="server-badge">
+          <span class="server-dot"></span>
+          <span>Serveur : <strong>Virtual Vision</strong></span>
+        </div>
+        <button id="logoutBtn" class="btn btn-secondary btn-sm" style="width: 100%;">
+          🚪 Déconnexion
+        </button>
+      </div>
+    </aside>
+
+    <!-- Zone de Contenu Principale (Main Wrapper) -->
+    <div class="main-wrapper">
+      
+      <!-- En-tête Supérieur (Top Header) -->
+      <header class="main-header">
+        <div class="header-left">
+          <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Menu">
+            ☰
+          </button>
+          <div class="page-title-group">
+            <h1 id="currentSectionTitle">Virtual Vision Bot</h1>
+            <p id="currentSectionSubtitle">Administration complète & gestion en temps réel</p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="connection-status">
+            <span id="connectionDot" class="status-dot disconnected"></span>
+            <span id="connectionText">Déconnecté</span>
+          </div>
+
+          <button id="refreshDataBtn" class="btn btn-secondary btn-sm" title="Actualiser les données">
+            🔄 Actualiser
+          </button>
+        </div>
+      </header>
+
+      <!-- Corps du Contenu (Sections SPA) -->
+      <main class="content-body">
+
+        <!-- ================================================================
+             SECTION 1 : ACCUEIL (Overview)
+             ================================================================ -->
+        <section id="section-accueil" class="dashboard-section active">
+          
+          <!-- 4 Cartes de Statistiques Clés -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon">🎫</div>
+              <div class="stat-info">
+                <span class="stat-label">Total Tickets</span>
+                <span id="statTotalTickets" class="stat-value">0</span>
+                <span class="stat-trend up">📈 Commandes traitées</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon">⏳</div>
+              <div class="stat-info">
+                <span class="stat-label">Tickets Ouverts</span>
+                <span id="statOpenTickets" class="stat-value">0</span>
+                <span class="stat-trend neutral">⚡ En cours de montage</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon">⭐</div>
+              <div class="stat-info">
+                <span class="stat-label">Note Moyenne</span>
+                <span id="statAvgRating" class="stat-value">0.0 / 5</span>
+                <span class="stat-trend up">✨ Satisfaction client</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon">💰</div>
+              <div class="stat-info">
+                <span class="stat-label">Revenus Estimés</span>
+                <span id="statRevenue" class="stat-value">0 €</span>
+                <span class="stat-trend up">💳 Chiffre d'affaires</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grille de synthèse Accueil -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+            
+            <!-- Aperçu Tickets Récents -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h2 class="card-title">🎫 Dernières Commandes Vidéo</h2>
+                  <p class="card-subtitle">Tickets créés récemment sur le serveur</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="navigateToSection('tickets')">
+                  Voir tout ➔
+                </button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th># ID</th>
+                      <th>Client</th>
+                      <th>Service</th>
+                      <th>Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody id="overviewRecentTicketsBody">
+                    <tr><td colspan="4" class="table-empty">Chargement des données...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Aperçu Derniers Avis Reçus -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h2 class="card-title">⭐ Retours Clients Récents</h2>
+                  <p class="card-subtitle">Les derniers retours sur les montages livrés</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="navigateToSection('avis')">
+                  Gérer les avis ➔
+                </button>
+              </div>
+
+              <div id="overviewRecentReviewsList" style="display: flex; flex-direction: column; gap: 14px;">
+                <div class="table-empty">Chargement des avis...</div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Carte Info & Raccourcis Rapides -->
+          <div class="card" style="margin-top: 4px;">
+            <div class="card-header">
+              <h2 class="card-title">⚡ Actions & Raccourcis Rapides</h2>
+            </div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button class="btn btn-primary" onclick="navigateToSection('configuration')">
+                ⚙️ Configurer les Salons & Rôles
+              </button>
+              <button class="btn btn-secondary" onclick="navigateToSection('configuration'); scrollToServices();">
+                🎬 Gérer les Tarifs & Services
+              </button>
+              <button class="btn btn-secondary" onclick="navigateToSection('moderation')">
+                🛡️ Consulter les Logs Anti-Raid
+              </button>
+              <button class="btn btn-secondary" onclick="navigateToSection('statistiques')">
+                📊 Voir les Métriques Avancées
+              </button>
+            </div>
+          </div>
+
+        </section>
+
+
+        <!-- ================================================================
+             SECTION 2 : TICKETS (Ticket Management)
+             ================================================================ -->
+        <section id="section-tickets" class="dashboard-section">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">🎫 Gestion des Tickets de Commande</h2>
+                <p class="card-subtitle">Visualisez, filtrez et consultez les transcriptions complètes des commandes</p>
+              </div>
+              <span id="ticketsCountBadge" class="badge badge-claimed">0 ticket(s)</span>
+            </div>
+
+            <!-- Barre de Filtres & Recherche -->
+            <div class="filter-bar">
+              <div class="search-input-wrapper">
+                <input 
+                  type="text" 
+                  id="ticketSearchInput" 
+                  class="form-control" 
+                  placeholder="🔍 Rechercher par utilisateur, tag ou ID..."
+                >
+              </div>
+
+              <div style="min-width: 180px;">
+                <select id="ticketStatusFilter" class="form-control">
+                  <option value="all">Tous les statuts</option>
+                  <option value="open">🟢 Ouvert (Open)</option>
+                  <option value="claimed">🟡 Pris en charge (Claimed)</option>
+                  <option value="closed">⚪ Fermé (Closed)</option>
+                </select>
+              </div>
+
+              <button id="resetTicketFiltersBtn" class="btn btn-secondary btn-sm">
+                Réinitialiser
+              </button>
+            </div>
+
+            <!-- Tableau des Tickets -->
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th># ID</th>
+                    <th>Client</th>
+                    <th>Service / Demande</th>
+                    <th>Monteur Assigné</th>
+                    <th>Statut</th>
+                    <th>Date de Création</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="ticketsTableBody">
+                  <tr><td colspan="7" class="table-empty">Chargement des tickets...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ================================================================
+             SECTION 3 : AVIS (Reviews Management)
+             ================================================================ -->
+        <section id="section-avis" class="dashboard-section">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">⭐ Gestion & Modération des Avis</h2>
+                <p class="card-subtitle">Contrôlez les commentaires publiés, modifiez les notes et gérez la visibilité publique</p>
+              </div>
+              <span id="reviewsCountBadge" class="badge badge-open">0 avis</span>
+            </div>
+
+            <!-- Barre de Filtres pour les Avis -->
+            <div class="filter-bar">
+              <div style="min-width: 170px;">
+                <select id="reviewStaffFilter" class="form-control">
+                  <option value="all">Tous les monteurs</option>
+                </select>
+              </div>
+
+              <div style="min-width: 170px;">
+                <select id="reviewServiceFilter" class="form-control">
+                  <option value="all">Tous les services</option>
+                </select>
+              </div>
+
+              <div style="min-width: 170px;">
+                <select id="reviewRatingFilter" class="form-control">
+                  <option value="all">Toutes les notes</option>
+                  <option value="5">⭐⭐⭐⭐⭐ (5 étoiles)</option>
+                  <option value="4">⭐⭐⭐⭐ & + (4★ et plus)</option>
+                  <option value="3">⭐⭐⭐ & + (3★ et plus)</option>
+                  <option value="2">⭐⭐ & + (2★ et plus)</option>
+                  <option value="1">⭐ & + (1★ et plus)</option>
+                </select>
+              </div>
+
+              <div class="search-input-wrapper">
+                <input 
+                  type="text" 
+                  id="reviewSearchInput" 
+                  class="form-control" 
+                  placeholder="🔍 Rechercher dans le texte ou par client..."
+                >
+              </div>
+
+              <button id="resetReviewFiltersBtn" class="btn btn-secondary btn-sm">
+                Réinitialiser
+              </button>
+            </div>
+
+            <!-- Tableau des Avis -->
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Client</th>
+                    <th>Monteur</th>
+                    <th>Service</th>
+                    <th>Note</th>
+                    <th>Commentaire</th>
+                    <th>Visibilité</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="reviewsTableBody">
+                  <tr><td colspan="7" class="table-empty">Chargement des avis...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ================================================================
+             SECTION 4 : MODÉRATION (Warnings & Anti-Raid)
+             ================================================================ -->
+        <section id="section-moderation" class="dashboard-section">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">🛡️ Espace Modération & Sécurité</h2>
+                <p class="card-subtitle">Supervision des sanctions et surveillance des protections automatiques anti-raid</p>
+              </div>
+            </div>
+
+            <!-- Navigation par Onglets -->
+            <div class="tabs-nav">
+              <button id="tabBtnWarnings" class="tab-btn active" onclick="switchModTab('warnings')">
+                ⚠️ Avertissements (Warnings)
+              </button>
+              <button id="tabBtnAntiRaid" class="tab-btn" onclick="switchModTab('antiraid')">
+                🛡️ Logs Anti-Raid
+              </button>
+            </div>
+
+            <!-- Onglet 1 : Avertissements -->
+            <div id="tabPaneWarnings" class="tab-pane active">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th># ID</th>
+                      <th>Utilisateur Sanctionné</th>
+                      <th>Modérateur</th>
+                      <th>Raison de l'avertissement</th>
+                      <th>Date & Heure</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="warningsTableBody">
+                    <tr><td colspan="6" class="table-empty">Chargement des avertissements...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Onglet 2 : Logs Anti-Raid -->
+            <div id="tabPaneAntiRaid" class="tab-pane">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th># ID</th>
+                      <th>Type d'Événement</th>
+                      <th>Cible / Utilisateur</th>
+                      <th>Action Prise</th>
+                      <th>Détails & Analyse</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody id="antiRaidTableBody">
+                    <tr><td colspan="6" class="table-empty">Chargement des logs anti-raid...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- ================================================================
+             SECTION 5 : CONFIGURATION (Settings & Services CRUD)
+             ================================================================ -->
+        <section id="section-configuration" class="dashboard-section">
+          
+          <!-- Carte 1 : Paramètres des Salons & Rôles Discord -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">⚙️ Paramètres du Serveur Discord</h2>
+                <p class="card-subtitle">Configuration des identifiants (IDs) des salons et des rôles clés</p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="reloadConfig()">
+                🔄 Recharger
+              </button>
+            </div>
+
+            <form id="configForm">
+              <div class="form-group" style="max-width: 320px;">
+                <label for="cfgGuildId">🆔 ID du Serveur Discord (Guild ID)</label>
+                <input 
+                  type="text" 
+                  id="cfgGuildId" 
+                  class="form-control" 
+                  placeholder="Ex: 112233445566778899"
+                  required
+                >
+                <div class="form-hint">Identifiant unique du serveur Virtual Vision</div>
+              </div>
+
+              <h3 style="font-size: 1rem; color: var(--accent-text); margin: 20px 0 10px 0; border-bottom: 1px solid var(--card-border); padding-bottom: 6px;">
+                💬 Salons Discord (Channel IDs)
+              </h3>
+              
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="cfgTicketChannel">Salon / Catégorie des Tickets</label>
+                  <input type="text" id="cfgTicketChannel" class="form-control" placeholder="ID Salon Ticket">
+                  <div class="form-hint">Où les tickets de commande vidéo sont créés</div>
+                </div>
+
+                <div class="form-group">
+                  <label for="cfgReviewsChannel">Salon des Avis Publics</label>
+                  <input type="text" id="cfgReviewsChannel" class="form-control" placeholder="ID Salon Avis">
+                  <div class="form-hint">Salon où les retours clients sont postés</div>
+                </div>
+
+                <div class="form-group">
+                  <label for="cfgLogsChannel">Salon des Logs Modération</label>
+                  <input type="text" id="cfgLogsChannel" class="form-control" placeholder="ID Salon Logs">
+                  <div class="form-hint">Logs anti-raid, bans et avertissements</div>
+                </div>
+
+                <div class="form-group">
+                  <label for="cfgAnnouncementsChannel">Salon des Annonces</label>
+                  <input type="text" id="cfgAnnouncementsChannel" class="form-control" placeholder="ID Salon Annonces">
+                  <div class="form-hint">Annonces des nouveautés et projets</div>
+                </div>
+
+                <div class="form-group">
+                  <label for="cfgWelcomeChannel">Salon de Bienvenue</label>
+                  <input type="text" id="cfgWelcomeChannel" class="form-control" placeholder="ID Salon Bienvenue">
+                  <div class="form-hint">Messages de bienvenue pour les nouveaux membres</div>
+                </div>
+              </div>
+
+              <h3 style="font-size: 1rem; color: var(--accent-text); margin: 20px 0 10px 0; border-bottom: 1px solid var(--card-border); padding-bottom: 6px;">
+                👥 Rôles Discord (Role IDs)
+              </h3>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="cfgStaffRole">Rôle Monteur / Staff</label>
+                  <input type="text" id="cfgStaffRole" class="form-control" placeholder="ID Rôle Monteur">
+                  <div class="form-hint">Permet de réclamer et gérer les tickets</div>
+                </div>
+
+                <div class="form-group">
+                  <label for="cfgAdminRole">Rôle Administrateur</label>
+                  <input type="text" id="cfgAdminRole" class="form-control" placeholder="ID Rôle Admin">
+                  <div class="form-hint">Accès total aux commandes d'administration</div>
+                </div>
+
+                <div class="form-group">
+                  <label for="cfgClientRole">Rôle Client</label>
+                  <input type="text" id="cfgClientRole" class="form-control" placeholder="ID Rôle Client">
+                  <div class="form-hint">Attribué automatiquement après commande</div>
+                </div>
+
+                <div class="form-group">
+                  <label for="cfgPingRole">Rôle Notification / Mention</label>
+                  <input type="text" id="cfgPingRole" class="form-control" placeholder="ID Rôle Mention">
+                  <div class="form-hint">Rôle notifié lors d'une nouvelle commande</div>
+                </div>
+              </div>
+
+              <div style="margin-top: 24px;">
+                <button type="submit" class="btn btn-primary">
+                  💾 Enregistrer les Modifications
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Carte 2 : Gestion CRUD des Services de Montage -->
+          <div id="servicesCard" class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">🎬 Catalogue des Services & Tarifs</h2>
+                <p class="card-subtitle">Ajoutez, modifiez ou désactivez les offres de montage vidéo proposées</p>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="toggleAddServiceForm()">
+                ➕ Ajouter un Service
+              </button>
+            </div>
+
+            <!-- Formulaire d'ajout rapide de service (repliable) -->
+            <div id="addServiceBox" style="display: none; background: #10162a; padding: 18px; border-radius: var(--radius-sm); border: 1px solid var(--card-border); margin-bottom: 20px;">
+              <h4 style="color: #ffffff; margin-bottom: 12px;">Nouveau Service de Montage</h4>
+              <form id="addServiceForm">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="newServiceEmoji">Emoji</label>
+                    <input type="text" id="newServiceEmoji" class="form-control" placeholder="Ex: 🎬" required maxlength="8">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="newServiceName">Nom du Service</label>
+                    <input type="text" id="newServiceName" class="form-control" placeholder="Ex: Montage YouTube Long" required>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="newServicePrice">Prix (€)</label>
+                    <input type="number" step="0.5" id="newServicePrice" class="form-control" placeholder="Ex: 45.00" required>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Actif dès la création</label>
+                    <div style="padding-top: 6px;">
+                      <label class="switch">
+                        <input type="checkbox" id="newServiceActive" checked>
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="newServiceDesc">Description complète de la prestation</label>
+                  <textarea id="newServiceDesc" class="form-control" rows="2" placeholder="Détails du rendu, sound design, transitions, sous-titres inclus..." required></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                  <button type="submit" class="btn btn-success btn-sm">
+                    ✔️ Valider et Enregistrer
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="toggleAddServiceForm()">
+                    Annuler
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Tableau des Services CRUD avec Édition Inline -->
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width: 70px;">Emoji</th>
+                    <th>Nom du Service</th>
+                    <th>Description</th>
+                    <th style="width: 110px;">Prix (€)</th>
+                    <th style="width: 100px;">Actif</th>
+                    <th style="width: 160px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="servicesTableBody">
+                  <tr><td colspan="6" class="table-empty">Chargement des services...</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- ================================================================
+             SECTION 6 : STATISTIQUES (Analytics & CSS Charts)
+             ================================================================ -->
+        <section id="section-statistiques" class="dashboard-section">
+          
+          <!-- Statistiques Chiffrées -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon">🎯</div>
+              <div class="stat-info">
+                <span class="stat-label">Taux de Résolution</span>
+                <span id="statsResolveRate" class="stat-value">99.2%</span>
+                <span class="stat-trend up">Livraisons réussies</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon">⏱️</div>
+              <div class="stat-info">
+                <span class="stat-label">Délai Moyen de Livraison</span>
+                <span id="statsAvgDelivery" class="stat-value">36h</span>
+                <span class="stat-trend up">Respect des deadlines</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon">🌟</div>
+              <div class="stat-info">
+                <span class="stat-label">Avis Positifs (4★+)</span>
+                <span id="statsPositiveRatio" class="stat-value">96.8%</span>
+                <span class="stat-trend up">Recommandé par les créateurs</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon">👥</div>
+              <div class="stat-info">
+                <span class="stat-label">Monteurs Disponibles</span>
+                <span id="statsActiveEditors" class="stat-value">6</span>
+                <span class="stat-trend neutral">Équipe Virtual Vision</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graphiques CSS (Sans librairie externe) -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 24px;">
+            
+            <!-- Graphique 1 : Répartition par Catégorie de Montage -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h2 class="card-title">📊 Répartition des Commandes par Type</h2>
+                  <p class="card-subtitle">Volume des projets réalisés chez Virtual Vision</p>
+                </div>
+              </div>
+
+              <div id="serviceDistributionChart" class="chart-container">
+                <!-- Barres CSS générées dynamiquement -->
+                <div class="chart-bar-item">
+                  <div class="chart-bar-label">
+                    <span>📱 Shorts / TikTok / Reels</span>
+                    <strong>38% (54 projets)</strong>
+                  </div>
+                  <div class="chart-bar-track">
+                    <div class="chart-bar-fill" style="width: 38%;">38%</div>
+                  </div>
+                </div>
+
+                <div class="chart-bar-item">
+                  <div class="chart-bar-label">
+                    <span>🎬 Montage YouTube Long (Vlog/Facecam)</span>
+                    <strong>29% (41 projets)</strong>
+                  </div>
+                  <div class="chart-bar-track">
+                    <div class="chart-bar-fill" style="width: 29%;">29%</div>
+                  </div>
+                </div>
+
+                <div class="chart-bar-item">
+                  <div class="chart-bar-label">
+                    <span>🎮 Gaming & Fragmovies / Esport</span>
+                    <strong>18% (25 projets)</strong>
+                  </div>
+                  <div class="chart-bar-track">
+                    <div class="chart-bar-fill" style="width: 18%;">18%</div>
+                  </div>
+                </div>
+
+                <div class="chart-bar-item">
+                  <div class="chart-bar-label">
+                    <span>🎨 Motion Design / Intros</span>
+                    <strong>10% (14 projets)</strong>
+                  </div>
+                  <div class="chart-bar-track">
+                    <div class="chart-bar-fill" style="width: 10%;">10%</div>
+                  </div>
+                </div>
+
+                <div class="chart-bar-item">
+                  <div class="chart-bar-label">
+                    <span>🌈 Étalonnage & Color Grading</span>
+                    <strong>5% (8 projets)</strong>
+                  </div>
+                  <div class="chart-bar-track">
+                    <div class="chart-bar-fill" style="width: 5%;">5%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Graphique 2 : Répartition des Notes Clients -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h2 class="card-title">⭐ Distribution des Notes (1 à 5 Étoiles)</h2>
+                  <p class="card-subtitle">Détail des avis clients laissés sur le serveur</p>
+                </div>
+              </div>
+
+              <div id="ratingsDistributionChart" class="chart-container">
+                <div class="chart-bar-item">
+                  <div class="chart-bar-label">
+                    <span>⭐⭐⭐⭐⭐ (5 Étoiles)</span>
+                    <strong id="barLabel5">82%</strong>
+                  </div>
+                  <div class="chart-bar-track">
+                    <div id="barFill5" class="chart-bar-fill" style="width: 82%;">82%</div>
+                  </div>
+                </div>
+
+                <div class="chart-bar-item">
+                  <div class="chart-bar-label">
+                    <span>⭐⭐⭐⭐ (4 Étoiles)</span>
+                    <strong id="barLabel4">14%</strong>
+                  </div>
+                  <div class="chart-bar-track">
+                    <div id="barFill4" class="chart-bar-fill" style="width: 14%;">14%</div>
+                  </div>
+                </div>
+
+                <div class="chart-bar-item">
+                  <div class="chart-bar-label">
+                    <span>⭐⭐⭐ (3 Étoiles)</span>
+                    <strong id="barLabel3">3%</strong>
+                  </div>
+                  <div class="chart-bar-track">
+                    <div id="barFill3" class="chart-bar-fill" style="width: 3%;">3%</div>
+                  </div>
+                </div>
+
+                <div class="chart-bar-item">
+                  <div class="chart-bar-label">
+                    <span>⭐⭐ (2 Étoiles)</span>
+                    <strong id="barLabel2">1%</strong>
+                  </div>
+                  <div class="chart-bar-track">
+                    <div id="barFill2" class="chart-bar-fill" style="width: 1%;">1%</div>
+                  </div>
+                </div>
+
+                <div class="chart-bar-item">
+                  <div class="chart-bar-label">
+                    <span>⭐ (1 Étoile)</span>
+                    <strong id="barLabel1">0%</strong>
+                  </div>
+                  <div class="chart-bar-track">
+                    <div id="barFill1" class="chart-bar-fill" style="width: 2%;">0%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       Modale Réutilisable Universelle (Modal Overlay)
+       ====================================================================== -->
+  <div id="modalOverlay" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalTitle" class="modal-title">Titre de la modale</h3>
+        <button id="modalCloseBtn" class="modal-close-btn" aria-label="Fermer">✕</button>
+      </div>
+      <div id="modalBody" class="modal-body">
+        <!-- Contenu dynamique injecté en JavaScript -->
+      </div>
+      <div id="modalFooter" class="modal-footer">
+        <!-- Boutons d'action dynamiques -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       Conteneur des Notifications Toast
+       ====================================================================== -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- Script d'orchestration JavaScript -->
+  <script src="js/app.js"></script>
+</body>
+</html>
